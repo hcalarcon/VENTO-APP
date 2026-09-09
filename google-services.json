@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "705938124765",
+    "project_id": "vento-app-28ae3",
+    "storage_bucket": "vento-app-28ae3.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:705938124765:android:75a0b3e6bf3c7150b1d034",
+        "android_client_info": {
+          "package_name": "com.hcalarcon.VENTOAPP"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8zhV3maDuEgy90idnYjP_dMTh6LatKIM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

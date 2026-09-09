@@ -1,0 +1,8 @@
+POST https://yjfljufancywoifambbh.supabase.co/functions/v1/ingest-reading
+Content-Type: application/json
+
+{
+  "device_token": "ffffa83f-1725-43b1-823d-b8ff5f7d17ec",
+  "co_ppm": 115.4,
+  "alert": true
+}

@@ -1,0 +1,108 @@
+import { NavigationContainer } from "@react-navigation/native";
+import * as Notifications from "expo-notifications";
+import * as SplashScreen from "expo-splash-screen";
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { Platform } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+
+import { AnimatedSplashScreen } from "./src/components/AnimatedSplashScreen";
+import { AppNavigator } from "./src/navigation/AppNavigator";
+import { subscribeToAlerts } from "./src/services/alertService";
+
+SplashScreen.preventAutoHideAsync();
+
+SplashScreen.setOptions({
+  duration: 500,
+  fade: true,
+});
+
+// Configuración para mostrar notificaciones
+// incluso cuando la app está abierta.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
+
+export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  // Configurar permisos y canal de Android
+  useEffect(() => {
+    const configurarNotificaciones = async () => {
+      if (Platform.OS === "android") {
+        await Notifications.setNotificationChannelAsync("default", {
+          name: "VENTO",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+        });
+      }
+    };
+
+    configurarNotificaciones();
+  }, []);
+
+  // Escuchar alertas provenientes de Supabase Realtime
+  useEffect(() => {
+    const unsubscribe = subscribeToAlerts(async (alert) => {
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "🚨 VENTO — Alerta de CO",
+          body: `${alert.coPpm} ppm detectados en ${alert.deviceName}`,
+        },
+        trigger: null,
+      });
+    });
+
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    const obtenerPushToken = async () => {
+      try {
+        const { status } = await Notifications.getPermissionsAsync();
+
+        if (status !== "granted") {
+          return;
+        }
+
+        // const projectId =
+        //   Constants.expoConfig?.extra?.eas?.projectId ??
+        //   Constants.easConfig?.projectId;
+        const projectId = "af2bd92e-6ee1-4421-8161-9169dacb859d";
+
+        if (!projectId) {
+          console.error("❌ No se encontró el Expo Project ID");
+          return;
+        }
+      } catch (error) {
+        console.error("❌ Error obteniendo Push Token:", error);
+      }
+    };
+
+    obtenerPushToken();
+  }, []);
+
+  // Ocultar SplashScreen
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+
+  return (
+    <SafeAreaProvider>
+      <NavigationContainer>
+        <AppNavigator />
+
+        <StatusBar style="auto" />
+
+        {showSplash ? (
+          <AnimatedSplashScreen onFinish={() => setShowSplash(false)} />
+        ) : null}
+      </NavigationContainer>
+    </SafeAreaProvider>
+  );
+}
