@@ -10,7 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { AlertCard } from "../components/AlertCard";
 import { StatCard } from "../components/StatCard";
-import { getActiveAlerts } from "../services/alertService";
+import { getActiveAlerts, subscribeToAlerts } from "../services/alertService";
 import { getStatistics } from "../services/statisticsService";
 import type { Alert } from "../types/alert";
 import type { Statistics } from "../types/statistics";
@@ -30,12 +30,7 @@ export const HomeScreen = () => {
           getActiveAlerts(),
         ]);
 
-        setStats({
-          ...statsData,
-          totalAlerts: statsData.activeAlerts,
-          averageCoPpm: 0,
-          maxCoPpm: 0,
-        });
+        setStats(statsData);
         setAlerts(alertsData.slice(0, 3));
       } catch (error) {
         console.error("Error cargando Home:", error);
@@ -45,6 +40,26 @@ export const HomeScreen = () => {
     };
 
     fetchData();
+
+    console.log("📡 Home: iniciando Realtime...");
+
+    const unsubscribe = subscribeToAlerts(async (alert) => {
+      console.log("🔄 Home: nueva alerta, actualizando datos...");
+
+      try {
+        const [statsData, alertsData] = await Promise.all([
+          getStatistics(),
+          getActiveAlerts(),
+        ]);
+
+        setStats(statsData);
+        setAlerts(alertsData.slice(0, 3));
+      } catch (error) {
+        console.error("Error actualizando Home:", error);
+      }
+    }, "home-realtime");
+
+    return unsubscribe;
   }, []);
 
   if (loading || !stats) {

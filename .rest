@@ -3,6 +3,17 @@ Content-Type: application/json
 
 {
   "device_token": "ffffa83f-1725-43b1-823d-b8ff5f7d17ec",
-  "co_ppm": 115.4,
+  "co_ppm": 220.4,
   "alert": true
+}
+
+###
+POST https://yjfljufancywoifambbh.supabase.co/functions/v1/send-push
+Content-Type: application/json
+Authorization: Bearer sb_publishable_GnHzhBdBVEP0ZKhPtFJsLQ_BJSyujsk
+apikey: sb_publishable_GnHzhBdBVEP0ZKhPtFJsLQ_BJSyujsk
+
+{
+  "co_ppm": 115.4,
+  "device_name": "VENTO-01"
 }

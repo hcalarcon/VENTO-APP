@@ -126,7 +126,7 @@ export function AnimatedSplashScreen({ onFinish }: AnimatedSplashScreenProps) {
           />
         </Animated.View>
         <Text style={styles.title}>VENTO</Text>
-        <Text style={styles.subtitle}>control inteligente, sin ruido</Text>
+        <Text style={styles.subtitle}>control inteligente</Text>
         <View style={styles.loadingTrack}>
           <View style={styles.loadingBar} />
         </View>

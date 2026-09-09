@@ -75,9 +75,14 @@ export const getAlertsByDevice = async (deviceId: string): Promise<Alert[]> => {
 };
 
 // Realtime: nueva lectura con alert=true
-export const subscribeToAlerts = (onAlert: (alert: Alert) => void) => {
+export const subscribeToAlerts = (
+  onAlert: (alert: Alert) => void,
+  channelName = "alerts-realtime",
+) => {
+  console.log(`📡 Creando canal ${channelName}...`);
+
   const channel = supabase
-    .channel("alerts-realtime")
+    .channel(channelName)
     .on(
       "postgres_changes",
       {
@@ -87,16 +92,22 @@ export const subscribeToAlerts = (onAlert: (alert: Alert) => void) => {
         filter: "alert=eq.true",
       },
       async (payload) => {
-        const row = payload.new as AlertRow;
+        console.log("🚨 REALTIME RECIBIDO:", payload);
 
+        const row = payload.new as AlertRow;
         const alert = await mapAlert(row);
+
+        console.log("🚨 ALERTA MAPEADA:", alert);
 
         onAlert(alert);
       },
     )
-    .subscribe();
+    .subscribe((status) => {
+      console.log(`📡 REALTIME STATUS ${channelName}:`, status);
+    });
 
   return () => {
+    console.log(`📡 Cerrando ${channelName}...`);
     supabase.removeChannel(channel);
   };
 };
