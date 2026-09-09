@@ -1,15 +1,39 @@
 import { Ionicons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createNavigationContainerRef } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
+import { APP_ROLE } from "../constants/app";
+import type { AlertScreenParams } from "../screens/AlertScreen";
+import { AlertScreen } from "../screens/AlertScreen";
 import { AlertsScreen } from "../screens/AlertsScreen";
 import { DeviceDetailScreen } from "../screens/DeviceDetailScreen";
 import { DevicesScreen } from "../screens/DevicesScreen";
 import { HomeScreen } from "../screens/HomeScreen";
 import { StatisticsScreen } from "../screens/StatisticsScreen";
+import { ViewerMonitorScreen } from "../screens/ViewerMonitorScreen";
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
+
+export type ViewerNavigationParamList = {
+  Monitor: undefined;
+  Alert: AlertScreenParams;
+};
+
+export const navigationRef =
+  createNavigationContainerRef<ViewerNavigationParamList>();
+
+const ViewerStack = () => {
+  const Viewer = createNativeStackNavigator();
+
+  return (
+    <Viewer.Navigator screenOptions={{ headerShown: false }}>
+      <Viewer.Screen name="Monitor" component={ViewerMonitorScreen} />
+      <Viewer.Screen name="Alert" component={AlertScreen} />
+    </Viewer.Navigator>
+  );
+};
 
 const DevicesStack = () => {
   return (
@@ -29,6 +53,10 @@ const DevicesStack = () => {
 };
 
 export const AppNavigator = () => {
+  if (APP_ROLE === "viewer") {
+    return <ViewerStack />;
+  }
+
   return (
     <Tab.Navigator
       screenOptions={{

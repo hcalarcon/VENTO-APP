@@ -79,10 +79,14 @@ export const subscribeToAlerts = (
   onAlert: (alert: Alert) => void,
   channelName = "alerts-realtime",
 ) => {
-  console.log(`📡 Creando canal ${channelName}...`);
+  const uniqueChannelName = `${channelName}-${Date.now()}-${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
+  console.log(`📡 Creando canal ${uniqueChannelName}...`);
 
   const channel = supabase
-    .channel(channelName)
+    .channel(uniqueChannelName)
     .on(
       "postgres_changes",
       {
@@ -103,11 +107,11 @@ export const subscribeToAlerts = (
       },
     )
     .subscribe((status) => {
-      console.log(`📡 REALTIME STATUS ${channelName}:`, status);
+      console.log(`📡 REALTIME STATUS ${uniqueChannelName}:`, status);
     });
 
   return () => {
-    console.log(`📡 Cerrando ${channelName}...`);
+    console.log(`📡 Cerrando ${uniqueChannelName}...`);
     supabase.removeChannel(channel);
   };
 };

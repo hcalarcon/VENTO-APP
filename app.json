@@ -34,7 +34,12 @@
           "imageWidth": 94
         }
       ],
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "co-alerts"
+        }
+      ]
     ],
     "experiments": {
       "reactCompiler": true

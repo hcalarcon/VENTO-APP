@@ -7,9 +7,12 @@ import { Platform } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AnimatedSplashScreen } from "./src/components/AnimatedSplashScreen";
 import { AppNavigator } from "./src/navigation/AppNavigator";
+
+import { APP_ROLE, CO_ALERT_CHANNEL } from "./src/constants/app";
+import { navigationRef } from "./src/navigation/AppNavigator";
 import { subscribeToAlerts } from "./src/services/alertService";
 import { registerPushToken } from "./src/services/pushService";
-
+import type { Alert } from "./src/types/alert";
 SplashScreen.preventAutoHideAsync();
 
 SplashScreen.setOptions({
@@ -28,8 +31,28 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const alertFromNotification = (
+  data: Record<string, unknown> | undefined,
+): Alert | null => {
+  if (data?.type !== "co_alert") return null;
+
+  return {
+    id: String(data.id ?? `push-${Date.now()}`),
+    deviceId: String(data.device_id ?? "unknown"),
+    deviceName: String(data.device_name ?? "Dispositivo"),
+    location: String(data.location ?? "Ubicacion no disponible"),
+    type: Number(data.co_ppm) >= 80 ? "co_critical" : "co_warning",
+    severity: Number(data.co_ppm) >= 80 ? "critical" : "warning",
+    coPpm: Number(data.co_ppm),
+    message: "Niveles de CO elevados detectados.",
+    createdAt: String(data.created_at ?? new Date().toISOString()),
+    resolved: false,
+  };
+};
+
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const [navigationReady, setNavigationReady] = useState(false);
 
   // Configurar permisos y canal de Android
   useEffect(() => {
@@ -39,6 +62,15 @@ export default function App() {
           name: "VENTO",
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
+        });
+
+        await Notifications.setNotificationChannelAsync(CO_ALERT_CHANNEL, {
+          name: "Alertas de CO",
+          importance: Notifications.AndroidImportance.MAX,
+
+          vibrationPattern: [0, 500, 250, 500],
+          lockscreenVisibility:
+            Notifications.AndroidNotificationVisibility.PUBLIC,
         });
       }
 
@@ -60,9 +92,18 @@ export default function App() {
         content: {
           title: "🚨 VENTO — Alerta de CO",
           body: `${alert.coPpm} ppm detectados en ${alert.deviceName}`,
-          sound: "default",
+
+          data: {
+            type: "co_alert",
+            id: alert.id,
+            device_id: alert.deviceId,
+            device_name: alert.deviceName,
+            location: alert.location,
+            co_ppm: alert.coPpm,
+            created_at: alert.createdAt,
+          },
         },
-        trigger: null,
+        trigger: { channelId: CO_ALERT_CHANNEL },
       });
 
       console.log("🔔 Notificación local enviada");
@@ -71,7 +112,6 @@ export default function App() {
     return unsubscribe;
   }, []);
 
-  //   const obtenerPushToken = async () => {
   //     try {
   //       const { status } = await Notifications.getPermissionsAsync();
 
@@ -104,11 +144,6 @@ export default function App() {
   //   obtenerPushToken();
   // }, []);
 
-  // Ocultar SplashScreen
-  useEffect(() => {
-    SplashScreen.hideAsync();
-  }, []);
-
   useEffect(() => {
     const obtenerPushToken = async () => {
       try {
@@ -132,7 +167,7 @@ export default function App() {
           projectId,
         });
 
-        await registerPushToken(token.data, "owner");
+        await registerPushToken(token.data, APP_ROLE);
 
         console.log("📱 EXPO PUSH TOKEN:", token.data);
       } catch (error) {
@@ -143,9 +178,38 @@ export default function App() {
     obtenerPushToken();
   }, []);
 
+  useEffect(() => {
+    const openAlert = (data: Record<string, unknown> | undefined) => {
+      const alert = alertFromNotification(data);
+
+      if (alert && APP_ROLE === "viewer" && navigationRef.isReady()) {
+        navigationRef.navigate("Alert", alert);
+      }
+    };
+
+    const responseSubscription =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        openAlert(response.notification.request.content.data);
+      });
+
+    Notifications.getLastNotificationResponseAsync().then((response) => {
+      openAlert(response?.notification.request.content.data);
+    });
+
+    return () => responseSubscription.remove();
+  }, [navigationReady]);
+
+  // Ocultar SplashScreen
+  useEffect(() => {
+    SplashScreen.hideAsync();
+  }, []);
+
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => setNavigationReady(true)}
+      >
         <AppNavigator />
 
         <StatusBar style="auto" />
